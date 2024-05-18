@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Stream</title>
+    <script>
+        function captureAndSaveImage() {
+            fetch('http://192.168.1.22:5000/capture')
+                .then(response => response.blob())
+                .then(blob => {
+                    const imageUrl = URL.createObjectURL(blob);
+                    const capturedImage = new Image();
+                    capturedImage.src = imageUrl;
+                    capturedImage.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = capturedImage.width;
+                        canvas.height = capturedImage.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(capturedImage, 0, 0);
+                        canvas.toBlob(blob => {
+                            const formData = new FormData();
+                            formData.append('image', blob, 'captured_image.jpg');
+                            fetch('http://192.168.1.22:5000/save_image', {
+                                method: 'POST',
+                                body: formData
+                            })
+                            .then(response => response.text())
+                            .then(data => console.log(data))
+                            .catch(error => console.error(error));
+                        }, 'image/jpeg');
+                    };
+                })
+                .catch(error => console.error(error));
+        }
+    </script>
+</head>
+<body>
+    <img id="video-frame" src="http://192.168.1.22:5000/video_feed" width="100%">
+    <button onclick="captureAndSaveImage()">Chụp và lưu ảnh</button>
+</body>
+</html>
