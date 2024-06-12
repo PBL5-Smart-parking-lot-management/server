@@ -1,40 +1,77 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Video Stream</title>
+    <title>Detection</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
     <script>
         function captureAndSaveImage() {
-            fetch('http://192.168.1.22:5000/capture')
+            fetch('http://10.10.58.92:5000/capture')
                 .then(response => response.blob())
                 .then(blob => {
-                    const imageUrl = URL.createObjectURL(blob);
-                    const capturedImage = new Image();
-                    capturedImage.src = imageUrl;
-                    capturedImage.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = capturedImage.width;
-                        canvas.height = capturedImage.height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(capturedImage, 0, 0);
-                        canvas.toBlob(blob => {
-                            const formData = new FormData();
-                            formData.append('image', blob, 'captured_image.jpg');
-                            fetch('http://192.168.1.22:5000/save_image', {
-                                method: 'POST',
-                                body: formData
-                            })
-                            .then(response => response.text())
-                            .then(data => console.log(data))
-                            .catch(error => console.error(error));
-                        }, 'image/jpeg');
-                    };
+                    const formData = new FormData();
+                    formData.append('image', blob, 'captured_image.jpg');
+                    return fetch('http://10.10.58.92:5000/save_image', {
+                        method: 'POST',
+                        body: formData
+                    });
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    document.getElementById('time_detection').value = new Date().toLocaleTimeString();
+                    document.getElementById('plate_number').value = data.result;
+                    if (data.result !== "No license plate detected.") {
+                        document.getElementById('plate_img').src = `http://10.10.58.92:5000/plate_image?_=${new Date().getTime()}`;
+                    } else {
+                        document.getElementById('plate_img').src = 'no_plate_img.png'; // Set a placeholder image
+                    }
                 })
                 .catch(error => console.error(error));
         }
     </script>
 </head>
 <body>
-    <img id="video-frame" src="http://192.168.1.22:5000/video_feed" width="100%">
-    <button onclick="captureAndSaveImage()">Chụp và lưu ảnh</button>
+<!-- NAVBAR -->
+<nav id="navbar">
+    <ul>
+        <li><a href="#">Trang chủ</a></li>
+        <li><a href="#">Nhận diện</a>
+            <ul class="submenu">
+                <li><a href="#">Video</a></li>
+                <li><a href="#">Hình Ảnh</a></li>
+            </ul>
+        </li>
+        <li><a href="#">Quản lí</a>
+            <ul class="submenu">
+                <li><a href="#">Khách Hàng</a></li>
+                <li><a href="#">Biển số xe</a></li>
+            </ul>
+        </li>
+    </ul>
+</nav>
+<!-- CONTENT -->
+<div id="left">
+    <!-- Stream Video-->
+    <img id="video_frame" src="http://10.10.58.92:5000/video_feed" width="100%">
+    <!-- Capture Button -->
+    <button onclick="captureAndSaveImage()" class="capture_btn">Capture</button>
+</div>
+
+<div id="right">
+    <!-- Car Plate Image-->
+    <img id="plate_img" src="xemay916.jpg" width="100%">
+    <!-- Time Detection -->
+    <div class="input_container">
+        <label for="time_detection">Thời gian nhận dạng:</label>
+        <input type="text" id="time_detection" name="time_detection">
+    </div>
+    <!-- Car Plate Result-->
+    <div class="input_container">
+        <label for="plate_number">Biển số xe:</label>
+        <input type="text" id="plate_number" name="plate_number">
+    </div>
+</div>
 </body>
 </html>
